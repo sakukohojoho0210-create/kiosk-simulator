@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>証明書交付サービス シミュレーター</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+    
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Vue.js 3 -->
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+
+    <style>
+        body {
+            font-family: 'Noto Sans JP', sans-serif;
+            background-color: #f0f2f5;
+            user-select: none; /* キオスク端末っぽくテキスト選択不可に */
+        }
+        
+        /* カスタムアニメーション */
+        .fade-enter-active, .fade-leave-active {
+            transition: opacity 0.3s ease;
+        }
+        .fade-enter-from, .fade-leave-to {
+            opacity: 0;
+        }
+
+        /* キオスク端末の画面比率に近いコンテナ */
+        .kiosk-screen {
+            aspect-ratio: 4/3;
+            max-width: 1024px;
+            box-shadow: 0 0 50px rgba(0,0,0,0.1);
+        }
+
+        /* 押した感じのボタンエフェクト */
+        .btn-press:active {
+            transform: scale(0.98);
+            filter: brightness(0.9);
+        }
+    </style>
+</head>
+<body class="flex items-center justify-center min-h-screen p-4 bg-gray-800">
+
+    <div id="app" class="w-full max-w-5xl">
+        <!-- 端末外枠 -->
+        <div class="bg-gray-900 p-4 rounded-xl shadow-2xl border-b-8 border-gray-800">
+            <!-- 画面エリア -->
+            <div class="kiosk-screen bg-gray-100 relative overflow-hidden rounded shadow-inner flex flex-col mx-auto w-full h-full">
+                
+                <!-- ヘッダー (ステップによって表示内容が変わる) -->
+                <header class="bg-[#005BAC] text-white p-4 flex justify-between items-center shadow-md shrink-0 h-20">
+                    <div class="flex items-center gap-4">
+                        <div class="bg-white text-[#005BAC] px-3 py-1 rounded font-bold text-lg shadow-sm">
+                            <i class="fa-solid fa-file-invoice"></i> 証明書交付サービス
+                        </div>
+                        <h1 class="text-xl font-bold tracking-wide">{{ currentStepTitle }}</h1>
+                    </div>
+                    
+                    <!-- 言語切り替え等のダミーボタン -->
+                    <div class="flex gap-2" v-if="currentStep > 0 && currentStep < 10">
+                        <button class="bg-blue-600 hover:bg-blue-500 px-3 py-1 rounded text-sm border border-blue-400">English</button>
+                        <button class="bg-gray-600 hover:bg-gray-500 px-3 py-1 rounded text-sm border border-gray-400">中止する</button>
+                    </div>
+                </header>
+
+                <!-- メインコンテンツエリア -->
+                <main class="flex-grow p-8 relative bg-[#E6F2FF]">
+                    <transition name="fade" mode="out-in">
+                        
+                        <!-- Step 0: 行政サービス選択トップ -->
+                        <div v-if="currentStep === 0" key="step0" class="h-full flex flex-col items-center justify-center space-y-8">
+                            <h2 class="text-3xl font-bold text-gray-800 mb-8">ご希望のボタンを押してください。</h2>
+                            <div class="grid grid-cols-2 gap-8 w-full max-w-4xl px-8">
+                                <button @click="nextStep" class="btn-press bg-gradient-to-b from-[#00A0E9] to-[#0086C4] text-white h-48 rounded-xl shadow-lg border-b-4 border-[#006ca0] flex flex-col items-center justify-center gap-4 hover:brightness-105 transition-all">
+                                    <i class="fa-solid fa-landmark text-6xl"></i>
+                                    <span class="text-3xl font-bold">行政サービス</span>
+                                </button>
+                                <button class="btn-press bg-gray-200 text-gray-400 h-48 rounded-xl shadow border-b-4 border-gray-300 flex flex-col items-center justify-center gap-4 cursor-not-allowed">
+                                    <i class="fa-solid fa-print text-6xl"></i>
+                                    <span class="text-3xl font-bold">プリントサービス</span>
+                                    <span class="text-sm">(準備中)</span>
+                                </button>
+                                <button class="btn-press bg-gray-200 text-gray-400 h-48 rounded-xl shadow border-b-4 border-gray-300 flex flex-col items-center justify-center gap-4 cursor-not-allowed">
+                                    <i class="fa-solid fa-network-wired text-6xl"></i>
+                                    <span class="text-3xl font-bold">ネットワークプリント</span>
+                                    <span class="text-sm">(準備中)</span>
+                                </button>
+                                <button class="btn-press bg-gray-200 text-gray-400 h-48 rounded-xl shadow border-b-4 border-gray-300 flex flex-col items-center justify-center gap-4 cursor-not-allowed">
+                                    <i class="fa-solid fa-copy text-6xl"></i>
+                                    <span class="text-3xl font-bold">コピー</span>
+                                    <span class="text-sm">(準備中)</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Step 1: 同意画面 -->
+                        <div v-if="currentStep === 1" key="step1" class="h-full flex flex-col items-center">
+                            <div class="bg-white w-full max-w-4xl p-8 rounded-lg shadow-lg flex-grow border-2 border-gray-300 overflow-y-auto mb-6">
+                                <h3 class="text-xl font-bold text-[#005BAC] mb-4 border-b-2 border-[#005BAC] pb-2">ご利用上の同意事項</h3>
+                                <div class="text-gray-700 space-y-4 text-lg leading-relaxed">
+                                    <p>当サービスのご利用にあたっては、以下の事項に同意いただく必要があります。</p>
+                                    <ul class="list-disc pl-6 space-y-2">
+                                        <li>マイナンバーカードを利用して証明書を取得します。</li>
+                                        <li>手数料のお支払いは、現金または電子マネーがご利用いただけます。</li>
+                                        <li>出力された証明書の返品・交換・返金はできません。</li>
+                                        <li>個人情報保護のため、証明書の取り忘れには十分ご注意ください。</li>
+                                    </ul>
+                                </div>
+                            </div>
+                            <button @click="nextStep" class="btn-press bg-orange-500 hover:bg-orange-400 text-white text-2xl font-bold py-4 px-16 rounded-full shadow-lg border-b-4 border-orange-700 transition-all w-1/2">
+                                同意する
+                            </button>
+                        </div>
+
+                        <!-- Step 2: 証明書の交付選択 -->
+                        <div v-if="currentStep === 2" key="step2" class="h-full flex flex-col items-center justify-center">
+                            <h2 class="text-3xl font-bold text-gray-800 mb-12">ご利用になるメニューを選択してください。</h2>
+                            <div class="flex gap-8">
+                                <button @click="nextStep" class="btn-press bg-gradient-to-b from-[#28a745] to-[#218838] text-white w-80 h-64 rounded-xl shadow-xl border-b-8 border-[#1e7e34] flex flex-col items-center justify-center gap-6 hover:translate-y-[-2px] transition-all">
+                                    <i class="fa-solid fa-file-signature text-7xl"></i>
+                                    <span class="text-3xl font-bold text-center leading-tight">証明書の<br>交付</span>
+                                </button>
+                                <button class="btn-press bg-gray-200 text-gray-500 w-80 h-64 rounded-xl shadow-xl border-b-8 border-gray-300 flex flex-col items-center justify-center gap-6 cursor-not-allowed">
+                                    <i class="fa-solid fa-building-columns text-7xl"></i>
+                                    <span class="text-3xl font-bold text-center leading-tight">本籍地<br>利用登録申請</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Step 3: カードセット案内 -->
+                        <div v-if="currentStep === 3" key="step3" class="h-full flex flex-col items-center justify-center text-center">
+                            <div class="animate-pulse mb-8">
+                                <i class="fa-solid fa-id-card text-9xl text-[#005BAC]"></i>
+                            </div>
+                            <h2 class="text-4xl font-bold text-gray-800 mb-4">マイナンバーカードをセットしてください</h2>
+                            <p class="text-xl text-gray-600 mb-12">所定のカード置き場にカードを置いてください。</p>
+                            
+                            <!-- シミュレーション用進行ボタン -->
+                            <button @click="nextStep" class="btn-press bg-blue-600 text-white px-8 py-3 rounded-lg shadow animate-bounce">
+                                [シミュレーション] カードをセットした
+                            </button>
+                        </div>
+
+                        <!-- Step 4: 暗証番号入力 (重要UI) -->
+                        <div v-if="currentStep === 4" key="step4" class="h-full flex flex-col">
+                            <h2 class="text-2xl font-bold text-center text-gray-800 mb-8 bg-white py-3 rounded-full shadow-sm">
+                                暗証番号（数字4桁）を入力してください（利用者証明用電子証明書）
+                            </h2>
+                            <div class="flex flex-grow gap-8 px-4">
+                                <!-- 左側：入力表示とガイド -->
+                                <div class="w-1/2 flex flex-col items-center justify-start pt-10">
+                                    <div class="bg-white border-4 border-blue-200 rounded-xl p-8 w-full text-center shadow-inner mb-6">
+                                        <div class="flex justify-center gap-4 text-6xl font-mono tracking-widest text-gray-800 h-20 items-center">
+                                            <span v-for="n in 4" :key="n" class="w-12 border-b-4 border-gray-300">
+                                                {{ pinCode.length >= n ? '●' : '' }}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <p class="text-red-500 font-bold text-lg bg-red-50 px-4 py-2 rounded border border-red-200">
+                                        <i class="fa-solid fa-triangle-exclamation mr-2"></i>3回間違えるとロックされます
+                                    </p>
+                                </div>
+                                <!-- 右側：テンキー -->
+                                <div class="w-1/2 bg-gray-200 p-6 rounded-2xl shadow-inner grid grid-cols-3 gap-4">
+                                    <button v-for="n in [1,2,3,4,5,6,7,8,9]" :key="n" @click="enterPin(n)" 
+                                        class="btn-press bg-white text-4xl font-bold text-gray-700 rounded-lg shadow-md border-b-4 border-gray-300 h-20 hover:bg-gray-50 active:border-b-0 active:translate-y-1 transition-all">
+                                        {{ n }}
+                                    </button>
+                                    <button @click="clearPin" class="btn-press bg-yellow-100 text-xl font-bold text-yellow-800 rounded-lg shadow-md border-b-4 border-yellow-200 h-20 hover:bg-yellow-50">
+                                        訂正
+                                    </button>
+                                    <button @click="enterPin(0)" class="btn-press bg-white text-4xl font-bold text-gray-700 rounded-lg shadow-md border-b-4 border-gray-300 h-20 hover:bg-gray-50">
+                                        0
+                                    </button>
+                                    <button @click="submitPin" :disabled="pinCode.length !== 4"
+                                        :class="{'opacity-50 cursor-not-allowed': pinCode.length !== 4}"
+                                        class="btn-press bg-blue-600 text-white text-xl font-bold rounded-lg shadow-md border-b-4 border-blue-800 h-20 hover:bg-blue-500">
+                                        確定
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                         <!-- Step 5: カード取り外し -->
+                         <div v-if="currentStep === 5" key="step5" class="h-full flex flex-col items-center justify-center text-center">
+                            <div class="animate-bounce mb-8">
+                                <i class="fa-solid fa-hand-holding text-9xl text-orange-500"></i>
+                            </div>
+                            <h2 class="text-4xl font-bold text-gray-800 mb-4">マイナンバーカードを取り外してください</h2>
+                            <p class="text-xl text-red-500 font-bold mb-12 bg-white px-8 py-4 rounded-full shadow">
+                                <i class="fa-solid fa-triangle-exclamation"></i> 置き忘れ防止のため、カードをお取りください。
+                            </p>
+                            
+                            <button @click="nextStep" class="btn-press bg-orange-600 text-white px-8 py-3 rounded-lg shadow">
+                                [シミュレーション] カードを取り外した
+                            </button>
+                        </div>
+
+                        <!-- Step 6: 証明書種類選択 -->
+                        <div v-if="currentStep === 6" key="step6" class="h-full flex flex-col">
+                            <h2 class="text-2xl font-bold text-center text-gray-800 mb-6 bg-white py-3 rounded-full shadow-sm">
+                                必要な証明書を選択してください。
+                            </h2>
+                            <div class="grid grid-cols-2 gap-6 px-12 flex-grow overflow-y-auto pb-4">
+                                <button @click="selectCert('住民票の写し')" class="btn-press bg-white hover:bg-blue-50 text-[#005BAC] h-32 rounded-xl shadow-lg border-l-8 border-[#005BAC] flex items-center px-8 transition-all group">
+                                    <div class="bg-blue-100 p-4 rounded-full mr-6 group-hover:bg-blue-200">
+                                        <i class="fa-solid fa-users text-3xl"></i>
+                                    </div>
+                                    <span class="text-2xl font-bold">住民票の写し</span>
+                                </button>
+                                <button class="btn-press bg-white text-gray-400 h-32 rounded-xl shadow border-l-8 border-gray-300 flex items-center px-8 cursor-not-allowed">
+                                    <div class="bg-gray-100 p-4 rounded-full mr-6">
+                                        <i class="fa-solid fa-file-contract text-3xl"></i>
+                                    </div>
+                                    <span class="text-2xl font-bold">住民票記載事項証明書</span>
+                                </button>
+                                <button class="btn-press bg-white text-gray-400 h-32 rounded-xl shadow border-l-8 border-gray-300 flex items-center px-8 cursor-not-allowed">
+                                    <div class="bg-gray-100 p-4 rounded-full mr-6">
+                                        <i class="fa-solid fa-stamp text-3xl"></i>
+                                    </div>
+                                    <span class="text-2xl font-bold">印鑑登録証明書</span>
+                                </button>
+                                <button class="btn-press bg-white text-gray-400 h-32 rounded-xl shadow border-l-8 border-gray-300 flex items-center px-8 cursor-not-allowed">
+                                    <div class="bg-gray-100 p-4 rounded-full mr-6">
+                                        <i class="fa-solid fa-yen-sign text-3xl"></i>
+                                    </div>
+                                    <span class="text-2xl font-bold">各種税証明書</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Step 7: 交付種別選択 -->
+                        <div v-if="currentStep === 7" key="step7" class="h-full flex flex-col items-center justify-center">
+                            <h2 class="text-2xl font-bold text-center text-gray-800 mb-8 bg-white py-3 px-8 rounded-full shadow-sm">
+                                交付種別を選択してください。
+                            </h2>
+                            <div class="space-y-6 w-full max-w-2xl">
+                                <button @click="selectType('本人のみ')" class="btn-press w-full bg-white hover:bg-blue-50 text-[#005BAC] py-6 rounded-xl shadow-lg border-2 border-[#005BAC] flex items-center justify-between px-12 transition-all">
+                                    <span class="text-3xl font-bold">本人のみ</span>
+                                    <i class="fa-solid fa-user text-4xl"></i>
+                                </button>
+                                <button @click="selectType('世帯全員')" class="btn-press w-full bg-white hover:bg-blue-50 text-[#005BAC] py-6 rounded-xl shadow-lg border-2 border-[#005BAC] flex items-center justify-between px-12 transition-all">
+                                    <span class="text-3xl font-bold">世帯全員</span>
+                                    <i class="fa-solid fa-users text-4xl"></i>
+                                </button>
+                                <button @click="selectType('世帯の一部')" class="btn-press w-full bg-white hover:bg-blue-50 text-[#005BAC] py-6 rounded-xl shadow-lg border-2 border-[#005BAC] flex items-center justify-between px-12 transition-all">
+                                    <span class="text-3xl font-bold">世帯の一部</span>
+                                    <i class="fa-solid fa-user-group text-4xl"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Step 8: 記載項目選択 (トグルUI) -->
+                        <div v-if="currentStep === 8" key="step8" class="h-full flex flex-col">
+                            <h2 class="text-2xl font-bold text-center text-gray-800 mb-6 bg-white py-3 rounded-full shadow-sm">
+                                証明書の記載項目を選択して「確定する」ボタンを押してください。
+                            </h2>
+                            <div class="flex-grow flex flex-col justify-center space-y-6 px-16">
+                                <!-- 項目行 -->
+                                <div v-for="(item, index) in options" :key="index" class="bg-white p-4 rounded-xl shadow-md flex items-center justify-between border-l-8 border-gray-400">
+                                    <span class="text-2xl font-bold text-gray-700 ml-4">{{ item.label }}</span>
+                                    <div class="flex bg-gray-200 p-1 rounded-lg">
+                                        <button @click="item.value = true" 
+                                            :class="{'bg-blue-600 text-white shadow-md': item.value, 'text-gray-500 hover:bg-gray-300': !item.value}"
+                                            class="w-32 py-3 rounded-md text-xl font-bold transition-all">
+                                            有
+                                        </button>
+                                        <button @click="item.value = false"
+                                            :class="{'bg-blue-600 text-white shadow-md': !item.value, 'text-gray-500 hover:bg-gray-300': item.value}"
+                                            class="w-32 py-3 rounded-md text-xl font-bold transition-all">
+                                            無
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="flex justify-end mt-4 px-8">
+                                <button @click="nextStep" class="btn-press bg-orange-500 hover:bg-orange-400 text-white text-2xl font-bold py-4 px-12 rounded-full shadow-lg border-b-4 border-orange-700 transition-all">
+                                    確定する
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Step 9: 部数入力 -->
+                        <div v-if="currentStep === 9" key="step9" class="h-full flex flex-col">
+                            <h2 class="text-2xl font-bold text-center text-gray-800 mb-8 bg-white py-3 rounded-full shadow-sm">
+                                必要な部数を入力し、「確定する」ボタンを押してください。
+                            </h2>
+                            <div class="flex flex-grow gap-8 px-4">
+                                <div class="w-1/2 flex flex-col items-center justify-center">
+                                    <div class="bg-white border-4 border-blue-200 rounded-xl p-10 w-full text-center shadow-inner mb-6 relative">
+                                        <span class="text-8xl font-bold text-gray-800">{{ quantity }}</span>
+                                        <span class="text-2xl text-gray-500 ml-4 font-bold">部</span>
+                                        <div class="absolute top-2 right-4 text-gray-400 text-sm font-bold">最大10部</div>
+                                    </div>
+                                </div>
+                                <div class="w-1/2 bg-gray-200 p-6 rounded-2xl shadow-inner grid grid-cols-3 gap-4">
+                                    <button v-for="n in [1,2,3,4,5,6,7,8,9]" :key="n" @click="setQuantity(n)" 
+                                        class="btn-press bg-white text-4xl font-bold text-gray-700 rounded-lg shadow-md border-b-4 border-gray-300 h-20 hover:bg-gray-50">
+                                        {{ n }}
+                                    </button>
+                                    <button @click="quantity = 1" class="btn-press bg-yellow-100 text-xl font-bold text-yellow-800 rounded-lg shadow-md border-b-4 border-yellow-200 h-20 hover:bg-yellow-50">
+                                        訂正
+                                    </button>
+                                    <button @click="setQuantity(0)" class="btn-press bg-white text-4xl font-bold text-gray-700 rounded-lg shadow-md border-b-4 border-gray-300 h-20 hover:bg-gray-50">
+                                        0
+                                    </button>
+                                    <button @click="nextStep" class="btn-press bg-orange-500 text-white text-xl font-bold rounded-lg shadow-md border-b-4 border-orange-700 h-20 hover:bg-orange-400">
+                                        確定
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                         <!-- Step 10: 最終確認 -->
+                         <div v-if="currentStep === 10" key="step10" class="h-full flex flex-col">
+                            <h2 class="text-2xl font-bold text-center text-gray-800 mb-6 bg-white py-3 rounded-full shadow-sm">
+                                発行内容を確認して「確定する」ボタンを押してください。
+                            </h2>
+                            <div class="bg-white p-6 rounded-xl shadow-lg border border-gray-300 mx-8 flex-grow overflow-y-auto">
+                                <table class="w-full text-lg">
+                                    <tbody>
+                                        <tr class="border-b">
+                                            <td class="py-3 text-gray-500 font-bold w-1/3">証明書種類</td>
+                                            <td class="py-3 font-bold text-gray-800 text-2xl">{{ selectedCertName }}</td>
+                                        </tr>
+                                        <tr class="border-b">
+                                            <td class="py-3 text-gray-500 font-bold">交付種別</td>
+                                            <td class="py-3 font-bold text-gray-800 text-2xl">{{ selectedType }}</td>
+                                        </tr>
+                                        <tr class="border-b" v-for="opt in options" :key="opt.label">
+                                            <td class="py-3 text-gray-500 font-bold">{{ opt.label }}</td>
+                                            <td class="py-3 font-bold" :class="opt.value ? 'text-blue-600' : 'text-gray-400'">
+                                                {{ opt.value ? '記載あり' : '記載なし' }}
+                                            </td>
+                                        </tr>
+                                        <tr class="bg-blue-50">
+                                            <td class="py-4 pl-4 text-gray-500 font-bold">部数</td>
+                                            <td class="py-4 font-bold text-gray-800 text-3xl">{{ quantity }} 部</td>
+                                        </tr>
+                                        <tr class="bg-blue-100">
+                                            <td class="py-4 pl-4 text-[#005BAC] font-bold text-xl">お支払い金額</td>
+                                            <td class="py-4 font-bold text-red-600 text-4xl">{{ quantity * 200 }} 円</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div class="flex justify-between items-center mt-4 px-8">
+                                <button @click="currentStep = 6" class="btn-press bg-gray-500 text-white text-xl font-bold py-3 px-8 rounded-full shadow border-b-4 border-gray-700">
+                                    戻る
+                                </button>
+                                <button @click="finishProcess" class="btn-press bg-orange-500 hover:bg-orange-400 text-white text-2xl font-bold py-4 px-12 rounded-full shadow-lg border-b-4 border-orange-700 animate-pulse">
+                                    確定する
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Step 11: 完了 -->
+                        <div v-if="currentStep === 11" key="step11" class="h-full flex flex-col items-center justify-center text-center">
+                            <div class="bg-white p-12 rounded-full shadow-xl mb-8">
+                                <i class="fa-solid fa-print text-8xl text-blue-500 animate-bounce"></i>
+                            </div>
+                            <h2 class="text-4xl font-bold text-gray-800 mb-6">証明書を印刷しています...</h2>
+                            <p class="text-xl text-gray-600 mb-8">
+                                料金 <span class="text-3xl font-bold text-red-500 mx-2">{{ quantity * 200 }}</span> 円を投入口に入れてください。
+                            </p>
+                            <div class="w-2/3 bg-gray-300 rounded-full h-4 overflow-hidden mb-12">
+                                <div class="bg-blue-500 h-full animate-[width_3s_ease-in-out_forwards]" style="width: 0%"></div>
+                            </div>
+                            
+                            <button @click="reset" class="btn-press bg-blue-600 text-white px-10 py-4 rounded-lg shadow-lg border-b-4 border-blue-800 font-bold text-xl">
+                                最初に戻る
+                            </button>
+                        </div>
+
+                    </transition>
+                </main>
+
+                <!-- フッターナビゲーション (共通) -->
+                <footer class="bg-gray-200 p-4 border-t-2 border-gray-300 flex justify-between items-center h-20 shrink-0">
+                    <button v-if="currentStep > 0 && currentStep < 11" @click="prevStep" 
+                        class="btn-press bg-white text-gray-600 px-6 py-2 rounded-lg font-bold shadow border-b-4 border-gray-300 flex items-center gap-2 hover:bg-gray-50">
+                        <i class="fa-solid fa-arrow-left"></i> 前画面へ
+                    </button>
+                    <div v-else class="w-10"></div> <!-- スペーサー -->
+                    
+                    <button v-if="currentStep > 0 && currentStep < 11" @click="reset"
+                        class="btn-press bg-red-600 text-white px-6 py-2 rounded-lg font-bold shadow border-b-4 border-red-800 flex items-center gap-2 hover:bg-red-500 ml-auto">
+                        <i class="fa-solid fa-power-off"></i> 終了する
+                    </button>
+                </footer>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const { createApp, ref, computed } = Vue;
+
+        createApp({
+            setup() {
+                const currentStep = ref(0);
+                const pinCode = ref("");
+                const selectedCertName = ref("");
+                const selectedType = ref("");
+                const quantity = ref(1);
+
+                // 記載項目オプション
+                const options = ref([
+                    { label: "世帯主・続柄の記載", value: false },
+                    { label: "本籍地・筆頭者の記載", value: false },
+                    { label: "マイナンバーの記載", value: false }
+                ]);
+
+                // タイトルの動的変更
+                const currentStepTitle = computed(() => {
+                    if (currentStep.value === 0) return "行政サービス";
+                    if (currentStep.value === 1) return "利用規約";
+                    if (currentStep.value >= 2 && currentStep.value <= 10) return "証明書交付サービス";
+                    return "";
+                });
+
+                // ナビゲーション
+                const nextStep = () => {
+                    currentStep.value++;
+                };
+
+                const prevStep = () => {
+                    if (currentStep.value > 0) currentStep.value--;
+                    if (currentStep.value === 4) pinCode.value = ""; // 暗証番号クリア
+                };
+
+                const reset = () => {
+                    if(confirm("最初の画面に戻りますか？入力内容は破棄されます。")) {
+                        currentStep.value = 0;
+                        pinCode.value = "";
+                        selectedCertName.value = "";
+                        selectedType.value = "";
+                        quantity.value = 1;
+                        options.value.forEach(opt => opt.value = false);
+                    }
+                };
+
+                // 暗証番号ロジック
+                const enterPin = (num) => {
+                    if (pinCode.value.length < 4) {
+                        pinCode.value += num;
+                    }
+                };
+                const clearPin = () => {
+                    pinCode.value = "";
+                };
+                const submitPin = () => {
+                    if (pinCode.value.length === 4) {
+                        // 擬似的な認証ラグ
+                        setTimeout(() => {
+                            nextStep();
+                        }, 300);
+                    }
+                };
+
+                // 証明書選択ロジック
+                const selectCert = (name) => {
+                    selectedCertName.value = name;
+                    nextStep();
+                };
+
+                const selectType = (type) => {
+                    selectedType.value = type;
+                    nextStep();
+                };
+
+                // 部数入力ロジック
+                const setQuantity = (num) => {
+                    // テンキー入力仕様: 0-9の数字を押すとその数になる(簡易実装)
+                    // 実際は桁あふれ制御などがあるが、ここはシンプルに置き換えか加算か
+                    // ここでは「押した数字」にする（1桁入力前提）または加算ロジックにする
+                    // 今回は1-9のボタンを押したらその数字になる仕様にします（最大10部のため）
+                    if (num === 0) {
+                        // 0の場合は何もしないか、あるいは10部にする等の仕様があるが、今回はリセット扱いにはしない
+                        return; 
+                    }
+                    quantity.value = num;
+                };
+
+                const finishProcess = () => {
+                    nextStep();
+                    // 印刷アニメーション用CSSクラスをトリガーするためにここで何かする必要はない
+                };
+
+                return {
+                    currentStep,
+                    currentStepTitle,
+                    pinCode,
+                    selectedCertName,
+                    selectedType,
+                    quantity,
+                    options,
+                    nextStep,
+                    prevStep,
+                    reset,
+                    enterPin,
+                    clearPin,
+                    submitPin,
+                    selectCert,
+                    selectType,
+                    setQuantity,
+                    finishProcess
+                };
+            }
+        }).mount('#app');
+    </script>
+    <style>
+        /* カスタムアニメーションキーフレーム */
+        @keyframes width {
+            from { width: 0%; }
+            to { width: 100%; }
+        }
+    </style>
+</body>
+</html>
