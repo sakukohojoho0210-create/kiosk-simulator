@@ -346,7 +346,7 @@
                                         </tr>
                                         <tr class="bg-blue-100">
                                             <td class="py-4 pl-4 text-[#005BAC] font-bold text-xl">お支払い金額</td>
-                                            <td class="py-4 font-bold text-red-600 text-4xl">{{ quantity * 200 }} 円</td>
+                                            <td class="py-4 font-bold text-red-600 text-4xl">{{ quantity * 250 }} 円</td>
                                         </tr>
                                     </tbody>
                                 </table>
@@ -368,7 +368,7 @@
                             </div>
                             <h2 class="text-4xl font-bold text-gray-800 mb-6">証明書を印刷しています...</h2>
                             <p class="text-xl text-gray-600 mb-8">
-                                料金 <span class="text-3xl font-bold text-red-500 mx-2">{{ quantity * 200 }}</span> 円を投入口に入れてください。
+                                料金 <span class="text-3xl font-bold text-red-500 mx-2">{{ quantity * 250 }}</span> 円を投入口に入れてください。
                             </p>
                             <div class="w-2/3 bg-gray-300 rounded-full h-4 overflow-hidden mb-12">
                                 <div class="bg-blue-500 h-full animate-[width_3s_ease-in-out_forwards]" style="width: 0%"></div>
@@ -413,8 +413,7 @@
                 // 記載項目オプション
                 const options = ref([
                     { label: "世帯主・続柄の記載", value: false },
-                    { label: "本籍地・筆頭者の記載", value: false },
-                    { label: "マイナンバーの記載", value: false }
+                    { label: "本籍地・筆頭者の記載", value: false }
                 ]);
 
                 // タイトルの動的変更
